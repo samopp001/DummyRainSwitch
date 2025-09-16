@@ -78,8 +78,8 @@ Add the platform block to your Homebridge `config.json`:
         "logLevel": "info",
         "cacheTtlSeconds": 60,
         "retryBackoffSeconds": [30, 60, 120, 300],
-        "overrideMinutes": 30,
-        "quietHours": { "start": "23:00", "end": "07:00" }
+"overrideMinutes": 30,
+"quietHours": { "start": "23:00", "end": "07:00" }
       }
     }
   ]
@@ -94,6 +94,13 @@ Add the platform block to your Homebridge `config.json`:
 - `popThreshold` / `intensityThresholdMmPerHr`: forecast trigger thresholds for the “soon” switches.
 - `overrideMinutes`: when set, a manual toggle locks the state for the specified duration.
 - `quietHours`: prevent automatic changes between the defined start and end times (local clock).
+
+### Homebridge UI configuration schema
+
+Homebridge Config UI X automatically detects the bundled [`config.schema.json`](./config.schema.json) and renders a guided form
+for every option above. The schema includes sensible defaults, inline documentation, and collapsible sections for optional
+providers so that the plugin is easy to configure without editing JSON by hand. This satisfies the Homebridge Verified Plugin
+requirement for UI configuration support while keeping `config.json` edits available for advanced users.
 
 ## Development
 

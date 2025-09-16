@@ -1,5 +1,6 @@
 {
   "name": "homebridge-rain-switch",
+  "displayName": "Homebridge Rain Switch",
   "version": "0.1.0",
   "description": "Homebridge platform plugin that exposes switches reflecting rain and snow conditions",
   "keywords": [
@@ -23,7 +24,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "config.schema.json"
   ],
   "scripts": {
     "build": "rimraf dist && tsc -p tsconfig.json",
@@ -35,12 +37,18 @@
     "node": ">=16.20.0",
     "homebridge": ">=1.6.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "homebridge": "^1.6.0",
     "undici": "^6.11.1",
     "jose": "^5.3.0"
   },
+  "peerDependencies": {
+    "homebridge": ">=1.6.0"
+  },
   "devDependencies": {
+    "homebridge": "^1.6.0",
     "@types/node": "^18.19.38",
     "eslint": "^8.57.0",
     "@typescript-eslint/eslint-plugin": "^7.12.0",

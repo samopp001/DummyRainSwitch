@@ -1,0 +1,451 @@
+{
+  "pluginAlias": "RainSwitchPlatform",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "## Homebridge Rain Switch\nMonitor real-time and imminent precipitation with virtual switches that are easy to automate.",
+  "footerDisplay": "View the [project README](https://example.com/DummyRainSwitch#readme) for provider setup guides and advanced examples.",
+  "documentation": "https://example.com/DummyRainSwitch#readme",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Rain Switch",
+        "minLength": 1,
+        "description": "Label shown in the Home app for the platform group."
+      },
+      "location": {
+        "title": "Location",
+        "type": "object",
+        "properties": {
+          "mode": {
+            "title": "Location Mode",
+            "type": "string",
+            "default": "auto",
+            "oneOf": [
+              { "title": "Use Homebridge location", "const": "auto" },
+              { "title": "Specify coordinates", "const": "explicit" },
+              { "title": "Geocode an address", "const": "geocode" }
+            ],
+            "description": "Choose how the plugin resolves the latitude and longitude used for weather lookups."
+          },
+          "lat": {
+            "title": "Latitude",
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "Decimal latitude when using explicit coordinates."
+          },
+          "lon": {
+            "title": "Longitude",
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Decimal longitude when using explicit coordinates."
+          },
+          "address": {
+            "title": "Street Address",
+            "type": "string",
+            "description": "Optional human readable address to geocode when using the geocode mode."
+          }
+        },
+        "additionalProperties": false
+      },
+      "provider": {
+        "title": "Weather Providers",
+        "type": "object",
+        "properties": {
+          "mode": {
+            "title": "Primary Provider",
+            "type": "string",
+            "default": "auto",
+            "oneOf": [
+              { "title": "Automatic fallback", "const": "auto" },
+              { "title": "Apple WeatherKit", "const": "weatherkit" },
+              { "title": "OpenWeatherMap", "const": "openweathermap" },
+              { "title": "NOAA / NWS", "const": "nws" },
+              { "title": "Tomorrow.io", "const": "tomorrow" }
+            ],
+            "description": "Select a specific provider or let the plugin automatically fail over between sources."
+          },
+          "weatherkit": {
+            "title": "Apple WeatherKit",
+            "type": "object",
+            "properties": {
+              "teamId": { "title": "Team ID", "type": "string" },
+              "keyId": { "title": "Key ID", "type": "string" },
+              "serviceId": { "title": "Service ID", "type": "string" },
+              "privateKey": {
+                "title": "Private Key Path",
+                "type": "string",
+                "description": "Absolute path to the downloaded AuthKey file on the Homebridge host."
+              }
+            },
+            "additionalProperties": false
+          },
+          "openweathermap": {
+            "title": "OpenWeatherMap",
+            "type": "object",
+            "properties": {
+              "apiKey": {
+                "title": "API Key",
+                "type": "string",
+                "description": "Create an API key in your OpenWeatherMap dashboard."
+              }
+            },
+            "additionalProperties": false
+          },
+          "tomorrow": {
+            "title": "Tomorrow.io",
+            "type": "object",
+            "properties": {
+              "apiKey": {
+                "title": "API Key",
+                "type": "string",
+                "description": "Enter the Tomorrow.io API key."
+              }
+            },
+            "additionalProperties": false
+          },
+          "nws": {
+            "title": "NOAA / NWS",
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "title": "Enable NWS",
+                "type": "boolean",
+                "default": true,
+                "description": "Toggle the NOAA National Weather Service integration."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "polling": {
+        "title": "Polling",
+        "type": "object",
+        "properties": {
+          "intervalSeconds": {
+            "title": "Update Interval (s)",
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 900,
+            "default": 180,
+            "description": "How often to poll the weather provider."
+          },
+          "minOnDurationSeconds": {
+            "title": "Minimum ON Duration (s)",
+            "type": "integer",
+            "minimum": 0,
+            "default": 300,
+            "description": "Keep switches ON for at least this many seconds once triggered."
+          },
+          "minOffDurationSeconds": {
+            "title": "Minimum OFF Duration (s)",
+            "type": "integer",
+            "minimum": 0,
+            "default": 300,
+            "description": "Keep switches OFF for at least this many seconds before turning on again."
+          },
+          "timeoutMs": {
+            "title": "Request Timeout (ms)",
+            "type": "integer",
+            "minimum": 1000,
+            "default": 5000,
+            "description": "Abort provider requests that take longer than this many milliseconds."
+          }
+        },
+        "additionalProperties": false
+      },
+      "accessories": {
+        "title": "Accessories",
+        "type": "array",
+        "description": "Define the virtual switches exposed to HomeKit.",
+        "items": {
+          "type": "object",
+          "title": "Accessory",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "title": "Accessory Type",
+              "type": "string",
+              "default": "rain-now",
+              "oneOf": [
+                { "title": "Rain Now", "const": "rain-now" },
+                { "title": "Rain Soon", "const": "rain-soon" },
+                { "title": "Snow Mode", "const": "snow-mode" }
+              ]
+            },
+            "enabled": {
+              "title": "Enabled",
+              "type": "boolean",
+              "default": true
+            },
+            "thresholdMmPerHr": {
+              "title": "Rain Threshold (mm/hr)",
+              "type": "number",
+              "minimum": 0,
+              "default": 0.05,
+              "description": "Trigger the Rain Now accessory when precipitation intensity meets or exceeds this value."
+            },
+            "lookaheadMinutes": {
+              "title": "Lookahead (minutes)",
+              "type": "integer",
+              "minimum": 5,
+              "default": 60,
+              "description": "Forecast window used by Rain Soon accessories."
+            },
+            "popThreshold": {
+              "title": "Chance of Precipitation (%)",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "default": 40,
+              "description": "Minimum probability of precipitation needed to trip Rain Soon accessories."
+            },
+            "intensityThresholdMmPerHr": {
+              "title": "Forecast Intensity (mm/hr)",
+              "type": "number",
+              "minimum": 0,
+              "default": 0.2,
+              "description": "Minimum forecast intensity used together with the PoP threshold."
+            }
+          },
+          "required": ["name", "type"],
+          "additionalProperties": false
+        }
+      },
+      "advanced": {
+        "title": "Advanced",
+        "type": "object",
+        "properties": {
+          "logLevel": {
+            "title": "Log Verbosity",
+            "type": "string",
+            "default": "info",
+            "oneOf": [
+              { "title": "Debug", "const": "debug" },
+              { "title": "Info", "const": "info" },
+              { "title": "Warn", "const": "warn" },
+              { "title": "Error", "const": "error" }
+            ]
+          },
+          "cacheTtlSeconds": {
+            "title": "Cache TTL (s)",
+            "type": "integer",
+            "minimum": 0,
+            "default": 60,
+            "description": "Seconds to reuse provider data before requesting a fresh update."
+          },
+          "retryBackoffSeconds": {
+            "title": "Retry Backoff (s)",
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "default": [30, 60, 120, 300],
+            "description": "Durations to wait between retry attempts after provider failures."
+          },
+          "overrideMinutes": {
+            "title": "Manual Override (minutes)",
+            "type": "integer",
+            "minimum": 0,
+            "default": 30,
+            "description": "Optional lockout period after a manual HomeKit toggle."
+          },
+          "quietHours": {
+            "title": "Quiet Hours",
+            "type": "object",
+            "properties": {
+              "start": {
+                "title": "Start Time",
+                "type": "string",
+                "pattern": "^([0-1]\\d|2[0-3]):[0-5]\\d$",
+                "description": "Start of the quiet hours window in 24-hour HH:MM format."
+              },
+              "end": {
+                "title": "End Time",
+                "type": "string",
+                "pattern": "^([0-1]\\d|2[0-3]):[0-5]\\d$",
+                "description": "End of the quiet hours window in 24-hour HH:MM format."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "required": ["name"],
+    "additionalProperties": false
+  },
+  "form": [
+    "name",
+    {
+      "type": "fieldset",
+      "title": "Location",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "type": "select",
+          "key": "location.mode",
+          "titleMap": [
+            { "value": "auto", "name": "Use Homebridge location" },
+            { "value": "explicit", "name": "Specify coordinates" },
+            { "value": "geocode", "name": "Geocode an address" }
+          ]
+        },
+        "location.lat",
+        "location.lon",
+        "location.address"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Weather Providers",
+      "items": [
+        {
+          "type": "select",
+          "key": "provider.mode",
+          "titleMap": [
+            { "value": "auto", "name": "Automatic fallback" },
+            { "value": "weatherkit", "name": "Apple WeatherKit" },
+            { "value": "openweathermap", "name": "OpenWeatherMap" },
+            { "value": "nws", "name": "NOAA / NWS" },
+            { "value": "tomorrow", "name": "Tomorrow.io" }
+          ]
+        },
+        {
+          "type": "fieldset",
+          "title": "Apple WeatherKit",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "provider.weatherkit.teamId",
+            "provider.weatherkit.keyId",
+            "provider.weatherkit.serviceId",
+            "provider.weatherkit.privateKey"
+          ]
+        },
+        {
+          "type": "fieldset",
+          "title": "OpenWeatherMap",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "provider.openweathermap.apiKey"
+          ]
+        },
+        {
+          "type": "fieldset",
+          "title": "Tomorrow.io",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "provider.tomorrow.apiKey"
+          ]
+        },
+        {
+          "type": "fieldset",
+          "title": "NOAA / NWS",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "provider.nws.enabled"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Polling",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "polling.intervalSeconds",
+        "polling.minOnDurationSeconds",
+        "polling.minOffDurationSeconds",
+        "polling.timeoutMs"
+      ]
+    },
+    {
+      "type": "array",
+      "key": "accessories",
+      "title": "Accessories",
+      "description": "Add the switches you want Homebridge to expose.",
+      "add": "Add accessory",
+      "items": [
+        {
+          "type": "section",
+          "items": [
+            "accessories[].name",
+            {
+              "type": "select",
+              "key": "accessories[].type",
+              "titleMap": [
+                { "value": "rain-now", "name": "Rain Now" },
+                { "value": "rain-soon", "name": "Rain Soon" },
+                { "value": "snow-mode", "name": "Snow Mode" }
+              ]
+            },
+            "accessories[].enabled",
+            "accessories[].thresholdMmPerHr",
+            "accessories[].lookaheadMinutes",
+            "accessories[].popThreshold",
+            "accessories[].intensityThresholdMmPerHr"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Advanced",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "type": "select",
+          "key": "advanced.logLevel",
+          "titleMap": [
+            { "value": "debug", "name": "Debug" },
+            { "value": "info", "name": "Info" },
+            { "value": "warn", "name": "Warn" },
+            { "value": "error", "name": "Error" }
+          ]
+        },
+        "advanced.cacheTtlSeconds",
+        {
+          "type": "array",
+          "key": "advanced.retryBackoffSeconds",
+          "title": "Retry Backoff (s)",
+          "add": "Add interval",
+          "items": [
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "advanced.overrideMinutes",
+        {
+          "type": "fieldset",
+          "title": "Quiet Hours",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            "advanced.quietHours.start",
+            "advanced.quietHours.end"
+          ]
+        }
+      ]
+    }
+  ]
+}
