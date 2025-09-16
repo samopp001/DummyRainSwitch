@@ -37,6 +37,9 @@ declare module 'homebridge' {
     unregisterPlatformAccessories(pluginName: string, platformName: string, accessories: PlatformAccessory[]): void;
     registerPlatform(pluginName: string, platformName: string, constructor: any): void;
     on(event: string, callback: () => void): void;
+    user: {
+      storagePath(): string;
+    };
   }
 }
 
@@ -72,6 +75,7 @@ declare module 'jose' {
 declare module 'fs/promises' {
   export function readFile(path: string, options?: any): Promise<string>;
   export function writeFile(path: string, data: string, options?: any): Promise<void>;
+  export function mkdir(path: string, options?: any): Promise<void>;
 }
 
 declare module 'fs' {
@@ -84,6 +88,7 @@ declare module 'os' {
 
 declare module 'path' {
   export function join(...segments: string[]): string;
-  const path: { join: typeof join };
+  export function dirname(path: string): string;
+  const path: { join: typeof join; dirname: typeof dirname };
   export default path;
 }

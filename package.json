@@ -13,12 +13,12 @@
   "author": "DummyRainSwitch Maintainers",
   "repository": {
     "type": "git",
-    "url": "git+https://example.com/DummyRainSwitch.git"
+    "url": "git+https://github.com/DummyRainSwitch/homebridge-rain-switch.git"
   },
   "bugs": {
-    "url": "https://example.com/DummyRainSwitch/issues"
+    "url": "https://github.com/DummyRainSwitch/homebridge-rain-switch/issues"
   },
-  "homepage": "https://example.com/DummyRainSwitch#readme",
+  "homepage": "https://github.com/DummyRainSwitch/homebridge-rain-switch#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -34,7 +34,7 @@
     "lint": "eslint src --ext .ts"
   },
   "engines": {
-    "node": ">=16.20.0",
+    "node": "^18.17.0 || >=20.0.0",
     "homebridge": ">=1.6.0"
   },
   "publishConfig": {

@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import os from 'os';
 import path from 'path';
@@ -6,7 +6,9 @@ import { request } from 'undici';
 import type { Logger } from 'homebridge';
 import type { LocationConfig } from '../types';
 
-const CACHE_FILE = path.join(os.homedir(), '.homebridge-rain-switch-cache.json');
+const LEGACY_CACHE_FILE = path.join(os.homedir(), '.homebridge-rain-switch-cache.json');
+const CACHE_DIR_NAME = 'rain-switch';
+const CACHE_FILE_NAME = 'location-cache.json';
 
 interface LocationCacheEntry {
   lat: number;
@@ -19,27 +21,45 @@ interface LocationCache {
   [key: string]: LocationCacheEntry;
 }
 
+const getCacheFile = (storagePath?: string): string => {
+  if (storagePath) {
+    return path.join(storagePath, CACHE_DIR_NAME, CACHE_FILE_NAME);
+  }
+  return LEGACY_CACHE_FILE;
+};
+
 export interface ResolvedLocation {
   lat: number;
   lon: number;
   source: string;
 }
 
-async function loadCache(): Promise<LocationCache> {
+async function loadCache(storagePath?: string): Promise<LocationCache> {
+  const cacheFile = getCacheFile(storagePath);
   try {
-    if (!existsSync(CACHE_FILE)) {
-      return {};
+    if (existsSync(cacheFile)) {
+      const contents = await readFile(cacheFile, 'utf8');
+      return JSON.parse(contents) as LocationCache;
     }
-    const contents = await readFile(CACHE_FILE, 'utf8');
-    return JSON.parse(contents) as LocationCache;
+    if (storagePath && existsSync(LEGACY_CACHE_FILE)) {
+      const contents = await readFile(LEGACY_CACHE_FILE, 'utf8');
+      const legacyCache = JSON.parse(contents) as LocationCache;
+      await saveCache(storagePath, legacyCache);
+      return legacyCache;
+    }
+    return {};
   } catch {
     return {};
   }
 }
 
-async function saveCache(cache: LocationCache): Promise<void> {
+async function saveCache(storagePath: string | undefined, cache: LocationCache): Promise<void> {
+  const cacheFile = getCacheFile(storagePath);
   try {
-    await writeFile(CACHE_FILE, JSON.stringify(cache, null, 2));
+    if (storagePath) {
+      await mkdir(path.dirname(cacheFile), { recursive: true });
+    }
+    await writeFile(cacheFile, JSON.stringify(cache, null, 2));
   } catch {
     // ignore
   }
@@ -64,15 +84,19 @@ function isFiniteCoordinate(value: number | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
-export async function resolveLocation(log: Logger, cfg?: LocationConfig): Promise<ResolvedLocation | null> {
-  const cache = await loadCache();
+export async function resolveLocation(
+  log: Logger,
+  cfg?: LocationConfig,
+  storagePath?: string,
+): Promise<ResolvedLocation | null> {
+  const cache = await loadCache(storagePath);
 
   if (cfg && isFiniteCoordinate(cfg.lat) && isFiniteCoordinate(cfg.lon)) {
     const lat = cfg.lat;
     const lon = cfg.lon;
     const source = 'config';
     cache['explicit'] = { lat, lon, source, ts: Date.now() };
-    await saveCache(cache);
+    await saveCache(storagePath, cache);
     return { lat, lon, source };
   }
 
@@ -91,7 +115,7 @@ export async function resolveLocation(log: Logger, cfg?: LocationConfig): Promis
         const lon = parseFloat(result[0].lon);
         if (Number.isFinite(lat) && Number.isFinite(lon)) {
           cache[key] = { lat, lon, source: 'geocode', ts: Date.now() };
-          await saveCache(cache);
+          await saveCache(storagePath, cache);
           log.info('Geocoded %s to %s,%s', cfg.address, lat.toFixed(4), lon.toFixed(4));
           return { lat, lon, source: 'geocode' };
         }
@@ -115,7 +139,7 @@ export async function resolveLocation(log: Logger, cfg?: LocationConfig): Promis
       const lon = data.longitude ?? data.lon;
       if (isFiniteCoordinate(lat) && isFiniteCoordinate(lon)) {
         cache[key] = { lat, lon, source: 'ip', ts: Date.now() };
-        await saveCache(cache);
+        await saveCache(storagePath, cache);
         log.info('Resolved automatic location to %s,%s', lat.toFixed(4), lon.toFixed(4));
         return { lat, lon, source: 'ip' };
       }
