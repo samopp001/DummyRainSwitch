@@ -1,0 +1,51 @@
+{
+  "name": "homebridge-rain-switch",
+  "version": "0.1.0",
+  "description": "Homebridge platform plugin that exposes switches reflecting rain and snow conditions",
+  "keywords": [
+    "homebridge-plugin",
+    "homekit",
+    "rain",
+    "weather"
+  ],
+  "license": "MIT",
+  "author": "DummyRainSwitch Maintainers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://example.com/DummyRainSwitch.git"
+  },
+  "bugs": {
+    "url": "https://example.com/DummyRainSwitch/issues"
+  },
+  "homepage": "https://example.com/DummyRainSwitch#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "watch": "tsc -w -p tsconfig.json",
+    "prepare": "npm run build",
+    "lint": "eslint src --ext .ts"
+  },
+  "engines": {
+    "node": ">=16.20.0",
+    "homebridge": ">=1.6.0"
+  },
+  "dependencies": {
+    "homebridge": "^1.6.0",
+    "undici": "^6.11.1",
+    "jose": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.38",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.12.0",
+    "@typescript-eslint/parser": "^7.12.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5"
+  }
+}
