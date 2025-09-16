@@ -71,8 +71,13 @@ class RainSwitchPlatform {
         return this.lastWeather;
     }
     async handleDidFinishLaunching() {
+        if (!this.hasEnabledAccessories()) {
+            await this.setupAccessories();
+            this.log.info('No accessories enabled; skipping provider initialisation');
+            return;
+        }
         try {
-            this.location = await (0, geo_1.resolveLocation)(this.log, this.config.location);
+            this.location = await (0, geo_1.resolveLocation)(this.log, this.config.location, this.api.user.storagePath());
             if (!this.location) {
                 this.log.warn('Unable to determine location; provider selection may fail');
             }
@@ -144,6 +149,9 @@ class RainSwitchPlatform {
         this.pollingTimer = setInterval(() => {
             void tick();
         }, this.intervalMs);
+    }
+    hasEnabledAccessories() {
+        return (this.config.accessories ?? []).some((accessory) => accessory.enabled !== false);
     }
     generateUuid(config) {
         return this.api.hap.uuid.generate(`${this.config.name}:${config.type}:${config.name}`);

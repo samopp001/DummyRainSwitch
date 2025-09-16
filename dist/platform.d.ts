@@ -35,5 +35,6 @@ export declare class RainSwitchPlatform implements DynamicPlatformPlugin {
     private handleDidFinishLaunching;
     private setupAccessories;
     private startPolling;
+    private hasEnabledAccessories;
     private generateUuid;
 }

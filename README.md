@@ -108,7 +108,7 @@ requirement for UI configuration support while keeping `config.json` edits avail
 - Lint the project (optional): `npm run lint`
 - The compiled JavaScript lands in `dist/` and is what Homebridge loads.
 
-A lightweight location resolver caches results in the user’s home directory to avoid repeated geocoding lookups. Provider failures trigger exponential backoff (default 30 → 60 → 120 → 300 seconds) while keeping the last known switch state and raising the HomeKit `StatusFault` characteristic.
+A lightweight location resolver caches results inside the Homebridge storage directory (`<storage>/rain-switch/location-cache.json`) to avoid repeated geocoding lookups. Provider failures trigger exponential backoff (default 30 → 60 → 120 → 300 seconds) while keeping the last known switch state and raising the HomeKit `StatusFault` characteristic.
 
 ## License
 

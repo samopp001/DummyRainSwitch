@@ -96,8 +96,18 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
   }
 
   private async handleDidFinishLaunching(): Promise<void> {
+    if (!this.hasEnabledAccessories()) {
+      await this.setupAccessories();
+      this.log.info('No accessories enabled; skipping provider initialisation');
+      return;
+    }
+
     try {
-      this.location = await resolveLocation(this.log, this.config.location);
+      this.location = await resolveLocation(
+        this.log,
+        this.config.location,
+        this.api.user.storagePath(),
+      );
       if (!this.location) {
         this.log.warn('Unable to determine location; provider selection may fail');
       }
@@ -173,6 +183,10 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
     this.pollingTimer = setInterval(() => {
       void tick();
     }, this.intervalMs);
+  }
+
+  private hasEnabledAccessories(): boolean {
+    return (this.config.accessories ?? []).some((accessory) => accessory.enabled !== false);
   }
 
   private generateUuid(config: RainAccessoryConfig): string {
