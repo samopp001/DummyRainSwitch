@@ -205,7 +205,7 @@ export class RainAccessory {
     }
   }
 
-  private async handleSetOn(value: unknown): Promise<void> {
+  private handleSetOn(value: unknown): void {
     const desired = value === true || value === 1;
     this.currentState = desired;
     this.switchService.updateCharacteristic(this.platform.Characteristic.On, desired);
