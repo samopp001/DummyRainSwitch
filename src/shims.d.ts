@@ -1,41 +1,82 @@
 // Minimal module declarations to satisfy TypeScript compilation in offline environments.
 declare module 'homebridge' {
-  export type Logger = {
-    info(...args: any[]): void;
-    warn(...args: any[]): void;
-    error(...args: any[]): void;
-    debug(...args: any[]): void;
-  };
+  export type LogMethod = (...args: unknown[]) => void;
 
-  export type Characteristic = any;
-  export type Service = {
-    setCharacteristic(...args: any[]): Service;
-    updateCharacteristic(...args: any[]): Service;
-    getCharacteristic(...args: any[]): Characteristic;
-    addCharacteristic(...args: any[]): Characteristic;
-    testCharacteristic(...args: any[]): boolean;
-  };
+  export interface Logger {
+    info: LogMethod;
+    warn: LogMethod;
+    error: LogMethod;
+    debug: LogMethod;
+  }
+
+  export interface Characteristic {
+    updateValue(value: unknown): Characteristic;
+    onSet(handler: (value: unknown) => void | Promise<void>): Characteristic;
+    onGet(handler: () => unknown): Characteristic;
+  }
+
+  export type CharacteristicConstructor = new (...args: unknown[]) => Characteristic;
+
+  export interface CharacteristicStatic extends CharacteristicConstructor {
+    readonly Name: Characteristic;
+    readonly On: Characteristic;
+    readonly StatusFault: Characteristic & {
+      readonly NO_FAULT: number;
+      readonly GENERAL_FAULT: number;
+    };
+  }
+
+  export interface Service {
+    setCharacteristic(characteristic: unknown, value: unknown): Service;
+    updateCharacteristic(characteristic: unknown, value: unknown): Service;
+    getCharacteristic(characteristic: CharacteristicConstructor | CharacteristicStatic): Characteristic;
+    addCharacteristic(characteristic: CharacteristicConstructor | CharacteristicStatic): Characteristic;
+    testCharacteristic(characteristic: CharacteristicConstructor | CharacteristicStatic): boolean;
+  }
+
+  export type ServiceConstructor = new (...args: unknown[]) => Service;
+
+  export interface ServiceNamespace {
+    readonly Switch: ServiceConstructor;
+    [key: string]: ServiceConstructor;
+  }
+
+  export interface HapNamespace {
+    readonly Characteristic: CharacteristicStatic;
+    readonly Service: ServiceNamespace;
+    readonly Formats: {
+      readonly STRING: string;
+      readonly FLOAT: string;
+    };
+    readonly Perms: {
+      readonly READ: string;
+      readonly NOTIFY: string;
+    };
+    readonly uuid: {
+      generate(value: string): string;
+    };
+  }
 
   export interface PlatformAccessory {
     UUID: string;
     displayName: string;
-    context: Record<string, any>;
-    getService(service: any): Service | undefined;
-    addService(service: any, name?: string): Service;
+    context: Record<string, unknown>;
+    getService(service: ServiceConstructor): Service | undefined;
+    addService(service: ServiceConstructor, name?: string): Service;
   }
 
-  export type PlatformConfig = Record<string, any>;
+  export type PlatformConfig = Record<string, unknown>;
 
   export interface DynamicPlatformPlugin {
     configureAccessory(accessory: PlatformAccessory): void;
   }
 
   export interface API {
-    hap: any;
+    hap: HapNamespace;
     platformAccessory: new (name: string, uuid: string) => PlatformAccessory;
     registerPlatformAccessories(pluginName: string, platformName: string, accessories: PlatformAccessory[]): void;
     unregisterPlatformAccessories(pluginName: string, platformName: string, accessories: PlatformAccessory[]): void;
-    registerPlatform(pluginName: string, platformName: string, constructor: any): void;
+    registerPlatform(pluginName: string, platformName: string, constructor: new (...args: unknown[]) => DynamicPlatformPlugin): void;
     on(event: string, callback: () => void): void;
     user: {
       storagePath(): string;
@@ -61,21 +102,21 @@ declare module 'undici' {
 
 declare module 'jose' {
   export class SignJWT {
-    constructor(payload: any);
-    setProtectedHeader(header: any): this;
+    constructor(payload: unknown);
+    setProtectedHeader(header: Record<string, unknown>): this;
     setIssuer(issuer: string): this;
     setIssuedAt(iat?: number): this;
     setExpirationTime(expiration: number | string): this;
-    sign(key: any): Promise<string>;
+    sign(key: unknown): Promise<string>;
   }
 
-  export function importPKCS8(key: string, alg: string): Promise<any>;
+  export function importPKCS8(key: string, alg: string): Promise<unknown>;
 }
 
 declare module 'fs/promises' {
-  export function readFile(path: string, options?: any): Promise<string>;
-  export function writeFile(path: string, data: string, options?: any): Promise<void>;
-  export function mkdir(path: string, options?: any): Promise<void>;
+  export function readFile(path: string, options?: { encoding?: string } | string): Promise<string>;
+  export function writeFile(path: string, data: string, options?: { encoding?: string } | string): Promise<void>;
+  export function mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
 }
 
 declare module 'fs' {

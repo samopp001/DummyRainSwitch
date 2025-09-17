@@ -97,7 +97,7 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
 
   private async handleDidFinishLaunching(): Promise<void> {
     if (!this.hasEnabledAccessories()) {
-      await this.setupAccessories();
+      this.setupAccessories();
       this.log.info('No accessories enabled; skipping provider initialisation');
       return;
     }
@@ -123,11 +123,11 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
       return;
     }
 
-    await this.setupAccessories();
+    this.setupAccessories();
     this.startPolling();
   }
 
-  private async setupAccessories(): Promise<void> {
+  private setupAccessories(): void {
     const configured = new Map<string, RainAccessoryConfig>();
     for (const acc of this.config.accessories ?? []) {
       if (acc.enabled === false) {
@@ -184,14 +184,14 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
           accessory.markFault();
         }
       } finally {
-        if (!this.providerChain) {
+        if (this.providerChain) {
+          this.pollingTimer = setTimeout(() => {
+            this.pollingTimer = null;
+            void tick();
+          }, this.intervalMs);
+        } else {
           this.pollingTimer = null;
-          return;
         }
-        this.pollingTimer = setTimeout(() => {
-          this.pollingTimer = null;
-          void tick();
-        }, this.intervalMs);
       }
     };
 
@@ -203,7 +203,7 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
   }
 
   private generateUuid(config: RainAccessoryConfig): string {
-    return this.api.hap.uuid.generate(`${this.config.name}:${config.type}:${config.name}`);
+    return String(this.api.hap.uuid.generate(`${this.config.name}:${config.type}:${config.name}`));
   }
 }
 

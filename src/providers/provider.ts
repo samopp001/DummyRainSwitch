@@ -63,8 +63,10 @@ export const makeProviderChain = (
     throw new Error('No weather providers enabled');
   }
 
-  let nowcastCache: { data: WeatherNowcast; ts: number } | null = null;
-  const forecastCache = new Map<number, { data: WeatherForecastSlice[]; ts: number }>();
+  type CacheEntry<T> = { data: T; ts: number };
+
+  let nowcastCache: CacheEntry<WeatherNowcast> | null = null;
+  const forecastCache = new Map<number, CacheEntry<WeatherForecastSlice[]>>();
   let backoffIndex = 0;
   let nextAllowedTs = 0;
 
@@ -86,7 +88,7 @@ export const makeProviderChain = (
     throw lastError ?? new Error('All providers failed');
   };
 
-  const isCacheValid = (entry: { ts: number } | undefined | null): entry is { ts: number } => {
+  const isCacheValid = <T>(entry: CacheEntry<T> | undefined | null): entry is CacheEntry<T> => {
     if (!entry) {
       return false;
     }
@@ -96,11 +98,11 @@ export const makeProviderChain = (
   return {
     async getNowcast(force = false): Promise<WeatherNowcast> {
       if (!force && isCacheValid(nowcastCache)) {
-        return nowcastCache!.data;
+        return nowcastCache.data;
       }
       if (nextAllowedTs && Date.now() < nextAllowedTs) {
         if (isCacheValid(nowcastCache)) {
-          return nowcastCache!.data;
+          return nowcastCache.data;
         }
         const wait = Math.max(0, nextAllowedTs - Date.now());
         throw new Error(`Providers backoff in effect for ${Math.round(wait / 1000)}s`);
@@ -113,11 +115,11 @@ export const makeProviderChain = (
       const rounded = Math.max(5, Math.ceil(lookaheadMinutes / 5) * 5);
       const cacheEntry = forecastCache.get(rounded);
       if (!force && isCacheValid(cacheEntry)) {
-        return cacheEntry!.data;
+        return cacheEntry.data;
       }
       if (nextAllowedTs && Date.now() < nextAllowedTs) {
         if (isCacheValid(cacheEntry)) {
-          return cacheEntry!.data;
+          return cacheEntry.data;
         }
         const wait = Math.max(0, nextAllowedTs - Date.now());
         throw new Error(`Providers backoff in effect for ${Math.round(wait / 1000)}s`);
