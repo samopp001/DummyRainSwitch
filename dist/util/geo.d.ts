@@ -5,4 +5,4 @@ export interface ResolvedLocation {
     lon: number;
     source: string;
 }
-export declare function resolveLocation(log: Logger, cfg?: LocationConfig, storagePath?: string): Promise<ResolvedLocation | null>;
+export declare function resolveLocation(log: Logger, cfg?: LocationConfig, storagePath?: string, timeoutMs?: number): Promise<ResolvedLocation | null>;

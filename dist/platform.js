@@ -77,7 +77,7 @@ class RainSwitchPlatform {
             return;
         }
         try {
-            this.location = await (0, geo_1.resolveLocation)(this.log, this.config.location, this.api.user.storagePath());
+            this.location = await (0, geo_1.resolveLocation)(this.log, this.config.location, this.api.user.storagePath(), this.timeoutMs);
             if (!this.location) {
                 this.log.warn('Unable to determine location; provider selection may fail');
             }
@@ -128,6 +128,10 @@ class RainSwitchPlatform {
         if (!this.providerChain) {
             return;
         }
+        if (this.pollingTimer) {
+            clearTimeout(this.pollingTimer);
+            this.pollingTimer = null;
+        }
         this.debug('Starting polling loop every %d seconds', this.intervalMs / 1000);
         const tick = async () => {
             try {
@@ -144,11 +148,18 @@ class RainSwitchPlatform {
                     accessory.markFault();
                 }
             }
+            finally {
+                if (!this.providerChain) {
+                    this.pollingTimer = null;
+                    return;
+                }
+                this.pollingTimer = setTimeout(() => {
+                    this.pollingTimer = null;
+                    void tick();
+                }, this.intervalMs);
+            }
         };
         void tick();
-        this.pollingTimer = setInterval(() => {
-            void tick();
-        }, this.intervalMs);
     }
     hasEnabledAccessories() {
         return (this.config.accessories ?? []).some((accessory) => accessory.enabled !== false);

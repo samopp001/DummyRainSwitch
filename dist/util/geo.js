@@ -49,14 +49,19 @@ async function saveCache(storagePath, cache) {
         // ignore
     }
 }
-async function fetchJson(url) {
-    const { body, statusCode } = await (0, undici_1.request)(url, {
+async function fetchJson(url, timeoutMs) {
+    const options = {
         method: 'GET',
         headers: {
             'User-Agent': 'homebridge-rain-switch/0',
             'Accept': 'application/json',
         },
-    });
+    };
+    if (timeoutMs != null) {
+        options.bodyTimeout = timeoutMs;
+        options.headersTimeout = timeoutMs;
+    }
+    const { body, statusCode } = await (0, undici_1.request)(url, options);
     if (statusCode < 200 || statusCode >= 300) {
         throw new Error(`HTTP ${statusCode}`);
     }
@@ -66,7 +71,7 @@ async function fetchJson(url) {
 function isFiniteCoordinate(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
-async function resolveLocation(log, cfg, storagePath) {
+async function resolveLocation(log, cfg, storagePath, timeoutMs) {
     const cache = await loadCache(storagePath);
     if (cfg && isFiniteCoordinate(cfg.lat) && isFiniteCoordinate(cfg.lon)) {
         const lat = cfg.lat;
@@ -85,7 +90,7 @@ async function resolveLocation(log, cfg, storagePath) {
         }
         try {
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cfg.address)}&limit=1`;
-            const result = await fetchJson(url);
+            const result = await fetchJson(url, timeoutMs);
             if (result.length) {
                 const lat = parseFloat(result[0].lat);
                 const lon = parseFloat(result[0].lon);
@@ -110,7 +115,7 @@ async function resolveLocation(log, cfg, storagePath) {
             return { lat: cached.lat, lon: cached.lon, source: cached.source };
         }
         try {
-            const data = await fetchJson('https://ipapi.co/json/');
+            const data = await fetchJson('https://ipapi.co/json/', timeoutMs);
             const lat = data.latitude ?? data.lat;
             const lon = data.longitude ?? data.lon;
             if (isFiniteCoordinate(lat) && isFiniteCoordinate(lon)) {

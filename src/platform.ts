@@ -18,7 +18,7 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
 
   private providerChain: ProviderChain | null = null;
   private location: ResolvedLocation | null = null;
-  private pollingTimer: ReturnType<typeof setInterval> | null = null;
+  private pollingTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly intervalMs: number;
   private readonly minOnMs: number;
   private readonly minOffMs: number;
@@ -107,6 +107,7 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
         this.log,
         this.config.location,
         this.api.user.storagePath(),
+        this.timeoutMs,
       );
       if (!this.location) {
         this.log.warn('Unable to determine location; provider selection may fail');
@@ -162,8 +163,14 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
     if (!this.providerChain) {
       return;
     }
+    if (this.pollingTimer) {
+      clearTimeout(this.pollingTimer);
+      this.pollingTimer = null;
+    }
+
     this.debug('Starting polling loop every %d seconds', this.intervalMs / 1000);
-    const tick = async () => {
+
+    const tick = async (): Promise<void> => {
       try {
         const weather = await this.providerChain!.getNowcast();
         this.lastWeather = weather;
@@ -176,13 +183,19 @@ export class RainSwitchPlatform implements DynamicPlatformPlugin {
         for (const accessory of this.accessories.values()) {
           accessory.markFault();
         }
+      } finally {
+        if (!this.providerChain) {
+          this.pollingTimer = null;
+          return;
+        }
+        this.pollingTimer = setTimeout(() => {
+          this.pollingTimer = null;
+          void tick();
+        }, this.intervalMs);
       }
     };
 
     void tick();
-    this.pollingTimer = setInterval(() => {
-      void tick();
-    }, this.intervalMs);
   }
 
   private hasEnabledAccessories(): boolean {
