@@ -130,7 +130,12 @@ class WeatherKitProvider {
             if (!this.cfg?.privateKey) {
                 throw new Error('WeatherKit private key missing');
             }
-            this.keyPromise = (0, promises_1.readFile)(this.cfg.privateKey, 'utf8').then((key) => (0, jose_1.importPKCS8)(key, 'ES256'));
+            this.keyPromise = (0, promises_1.readFile)(this.cfg.privateKey, 'utf8')
+                .then((key) => (0, jose_1.importPKCS8)(key, 'ES256'))
+                .catch((error) => {
+                this.keyPromise = null;
+                throw error;
+            });
         }
         return this.keyPromise;
     }

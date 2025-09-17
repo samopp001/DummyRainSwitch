@@ -172,7 +172,12 @@ export class WeatherKitProvider implements WeatherProvider {
       if (!this.cfg?.privateKey) {
         throw new Error('WeatherKit private key missing');
       }
-      this.keyPromise = readFile(this.cfg.privateKey, 'utf8').then((key) => importPKCS8(key, 'ES256'));
+      this.keyPromise = readFile(this.cfg.privateKey, 'utf8')
+        .then((key) => importPKCS8(key, 'ES256'))
+        .catch((error) => {
+          this.keyPromise = null;
+          throw error;
+        });
     }
     return this.keyPromise;
   }

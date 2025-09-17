@@ -65,14 +65,19 @@ async function saveCache(storagePath: string | undefined, cache: LocationCache):
   }
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const { body, statusCode } = await request(url, {
+async function fetchJson<T>(url: string, timeoutMs: number | undefined): Promise<T> {
+  const options: Parameters<typeof request>[1] = {
     method: 'GET',
     headers: {
       'User-Agent': 'homebridge-rain-switch/0',
       'Accept': 'application/json',
     },
-  });
+  };
+  if (timeoutMs != null) {
+    options.bodyTimeout = timeoutMs;
+    options.headersTimeout = timeoutMs;
+  }
+  const { body, statusCode } = await request(url, options);
   if (statusCode < 200 || statusCode >= 300) {
     throw new Error(`HTTP ${statusCode}`);
   }
@@ -88,6 +93,7 @@ export async function resolveLocation(
   log: Logger,
   cfg?: LocationConfig,
   storagePath?: string,
+  timeoutMs?: number,
 ): Promise<ResolvedLocation | null> {
   const cache = await loadCache(storagePath);
 
@@ -109,7 +115,7 @@ export async function resolveLocation(
     }
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cfg.address)}&limit=1`;
-      const result = await fetchJson<Array<{ lat: string; lon: string }>>(url);
+      const result = await fetchJson<Array<{ lat: string; lon: string }>>(url, timeoutMs);
       if (result.length) {
         const lat = parseFloat(result[0].lat);
         const lon = parseFloat(result[0].lon);
@@ -134,7 +140,7 @@ export async function resolveLocation(
       return { lat: cached.lat, lon: cached.lon, source: cached.source };
     }
     try {
-      const data = await fetchJson<{ latitude: number; longitude: number; lat?: number; lon?: number }>('https://ipapi.co/json/');
+      const data = await fetchJson<{ latitude: number; longitude: number; lat?: number; lon?: number }>('https://ipapi.co/json/', timeoutMs);
       const lat = data.latitude ?? data.lat;
       const lon = data.longitude ?? data.lon;
       if (isFiniteCoordinate(lat) && isFiniteCoordinate(lon)) {
